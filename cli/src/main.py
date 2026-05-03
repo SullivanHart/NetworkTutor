@@ -7,6 +7,23 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
+def _load_lesson_state(lesson_number: int):
+    if lesson_number == 1:
+        from packages.curriculum.lessons.lesson_01.lesson import build_topology, LessonState
+        return LessonState(build_topology())
+    if lesson_number == 2:
+        from packages.curriculum.lessons.lesson_02.lesson import LessonState
+        return LessonState()
+    if lesson_number == 3:
+        from packages.curriculum.lessons.lesson_03.lesson import LessonState
+        return LessonState()
+    if lesson_number == 4:
+        from packages.curriculum.lessons.lesson_04.lesson import LessonState
+        return LessonState()
+    if lesson_number == 5:
+        from packages.curriculum.lessons.lesson_05.lesson import LessonState
+        return LessonState()
+    raise KeyError(f"Lesson {lesson_number} not found.")
 
 def main():
     lesson_number = 1
@@ -37,8 +54,7 @@ def main():
             print(f"error: lesson {lesson_number} not found", file=sys.stderr)
             sys.exit(1)
 
-        from packages.curriculum.lessons.lesson_01.lesson import build_topology, LessonState
-        lesson_state = LessonState(build_topology())
+        lesson_state = _load_lesson_state(lesson_number)
 
     except ImportError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -46,8 +62,18 @@ def main():
         sys.exit(1)
 
     from cli.src.app import NetTutorApp
-    NetTutorApp(lesson_state).run()
+    from packages.curriculum.lesson_registry import get_lesson
 
+    while True:
+        app = NetTutorApp(lesson_state)
+        app.run()
+
+        next_n = lesson_number + 1
+        if not app.lesson_complete or get_lesson(next_n) is None:
+            break
+
+        lesson_number = next_n
+        lesson_state = _load_lesson_state(lesson_number)
 
 if __name__ == "__main__":
     main()
